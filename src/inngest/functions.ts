@@ -1,25 +1,42 @@
 import { Sandbox } from "@e2b/code-interpreter";
 import { inngest } from "./client";
-import { getSandbox, lastAssistantTextMessageContent } from "./utils";
+import {
+  getSandbox,
+  lastAssistantTextMessageContent,
+  toolMessages,
+} from "./utils";
 import {
   createAgent,
   openai,
   createTool,
   createNetwork,
+  Tool,
+  createState,
 } from "@inngest/agent-kit";
 import { z } from "zod";
-import { PROMPT } from "@/ai/prompt";
+import { PROMPT } from "@/prompt";
+import { prisma } from "@/lib/db";
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
-  { event: "test/hello-world" },
+interface AgentState {
+  vibed: string;
+  files: { [path: string]: string };
+}
+
+export const codeAgentFunction = inngest.createFunction(
+  { id: "code-agent" },
+  { event: "code-agent/run" },
   async ({ step, event }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("b-vibe-next");
       return sandbox.sandboxId;
     });
 
-    const codeAgent = createAgent({
+    const networkState = createState<AgentState>({
+      vibed: "",
+      files: {},
+    });
+
+    const codeAgent = createAgent<AgentState>({
       name: "code-agent",
       description:
         "An advanced coding assistant that executes terminal commands, manages project files, and provides precise code-related solutions in a sandboxed environment.",
@@ -34,7 +51,7 @@ export const helloWorld = inngest.createFunction(
         createTool({
           name: "executeTerminalCommand",
           description:
-            "Executes a specific command in a sandboxed terminal environment and returs the output.",
+            "Executes a specific command in a sandboxed terminal environment and returns the output.",
           parameters: z.object({
             command: z
               .string()
@@ -85,17 +102,16 @@ export const helloWorld = inngest.createFunction(
               })
             ),
           }),
-          handler: async ({ files }, { step, network }) => {
+          handler: async ({ files }, { step }) => {
             return await step?.run("manageFiles", async () => {
               try {
-                const updatedFiles = network.state.data.files || {};
                 const sandbox = await getSandbox(sandboxId);
                 for (const file of files) {
                   await sandbox.files.write(file.path, file.content);
-                  updatedFiles[file.path] = file.content;
                 }
-                network.state.data.files = updatedFiles;
-                return `Successfully updated ${files.length} file(s).`;
+                return `Successfully Updated ${
+                  Object.keys(files).length
+                } file(s).`;
               } catch (err) {
                 const errorMessage = `File operation failed: ${err}`;
                 console.error(errorMessage);
@@ -143,6 +159,34 @@ export const helloWorld = inngest.createFunction(
 
           if (lastAssistantMessageText && network) {
             if (lastAssistantMessageText.includes("<vibed>")) {
+              const files = toolMessages(
+                network.state.results
+              ).flatMap((call) =>
+                call.tools
+                  .filter((tool) => tool.name === "manageFiles")
+                  .flatMap((tool) =>
+                    (
+                      tool.input.files as {
+                        path: string;
+                        content: string;
+                      }[]
+                    ).reduce(
+                      (acc, next) => ({
+                        ...acc,
+                        [next.path as string]: next.content as string,
+                      }),
+                      {}
+                    )
+                  )
+              );
+
+              network.state.data.files = files.reduce(
+                (acc, next) => ({
+                  ...acc,
+                  ...next,
+                }),
+                {}
+              );
               network.state.data.vibed = lastAssistantMessageText;
             }
           }
@@ -152,10 +196,11 @@ export const helloWorld = inngest.createFunction(
       },
     });
 
-    const network = createNetwork({
+    const network = createNetwork<AgentState>({
       name: "coding-agent-network",
       agents: [codeAgent],
       maxIter: 15,
+      defaultState: networkState,
       router: async ({ network }) => {
         return network.state.data.vibed ? undefined : codeAgent;
       },
@@ -163,17 +208,47 @@ export const helloWorld = inngest.createFunction(
 
     const result = await network.run(event.data.prompt);
 
+    const isError =
+      !result.state.data.vibed ||
+      Object.keys(result.state.data.files || {}).length === 0;
+
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);
       const host = sandbox.getHost(3000);
       return `https://${host}`;
     });
 
+    await step.run("saving", async () => {
+      if (isError) {
+        return await prisma.message.create({
+          data: {
+            content: "Something went wrong. Please try again!",
+            role: "ASSISTANT",
+            type: "ERROR",
+          },
+        });
+      }
+      return await prisma.message.create({
+        data: {
+          type: "RESULT",
+          role: "ASSISTANT",
+          content: result.state.data.vibed.replace(
+            /<(\/?)vibed>/g,
+            ""
+          ),
+          fragment: {
+            create: {
+              title: "Fragment",
+              files: result.state.data.files || {},
+              sandboxUrl: sandboxUrl,
+            },
+          },
+        },
+      });
+    });
+
     return {
       url: sandboxUrl,
-      title: "Fragment",
-      files: result.state.data.files,
-      vibed: result.state.data.vibed,
     };
   }
 );

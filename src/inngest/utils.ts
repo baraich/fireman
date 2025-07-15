@@ -6,6 +6,14 @@ export async function getSandbox(sandboxId: string) {
   return sandbox;
 }
 
+export function toolMessages(results: AgentResult[]) {
+  const messages = results.flatMap((result) =>
+    result.output.filter((message) => message.type == "tool_call")
+  );
+
+  return messages;
+}
+
 export function lastAssistantTextMessageContent(result: AgentResult) {
   const lastAssistantTextMessageIndex = result.output.findLastIndex(
     (message) => message.role === "assistant"

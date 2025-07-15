@@ -1,6 +1,8 @@
-import { z } from "zod";
 import { createTRPCRouter } from "../init";
+import { messagesRouter } from "@/modules/procedures";
 
-export const appRouter = createTRPCRouter({});
+export const appRouter = createTRPCRouter({
+  messages: messagesRouter,
+});
 
 export type AppRouter = typeof appRouter;
