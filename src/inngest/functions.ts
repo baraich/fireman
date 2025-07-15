@@ -10,7 +10,6 @@ import {
   openai,
   createTool,
   createNetwork,
-  Tool,
   createState,
 } from "@inngest/agent-kit";
 import { z } from "zod";
@@ -222,9 +221,10 @@ export const codeAgentFunction = inngest.createFunction(
       if (isError) {
         return await prisma.message.create({
           data: {
-            content: "Something went wrong. Please try again!",
-            role: "ASSISTANT",
             type: "ERROR",
+            role: "ASSISTANT",
+            projectId: event.data.projectId,
+            content: "Something went wrong. Please try again!",
           },
         });
       }
@@ -232,6 +232,7 @@ export const codeAgentFunction = inngest.createFunction(
         data: {
           type: "RESULT",
           role: "ASSISTANT",
+          projectId: event.data.projectId,
           content: result.state.data.vibed.replace(
             /<(\/?)vibed>/g,
             ""
