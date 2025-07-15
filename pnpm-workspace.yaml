@@ -1,2 +1,4 @@
 ignoredBuiltDependencies:
   - '@prisma/client'
+onlyBuiltDependencies:
+  - inngest-cli

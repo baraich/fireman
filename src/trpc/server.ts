@@ -1,5 +1,5 @@
-import { cache } from "react";
 import "server-only";
+import { cache } from "react";
 import { makeQueryClient } from "./query-client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { createTRPCContext } from "./init";
