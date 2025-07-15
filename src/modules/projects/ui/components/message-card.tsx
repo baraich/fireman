@@ -77,7 +77,7 @@ export const AssistantMessage = ({
     <div
       className={cn(
         "flex flex-col group px-2 pb-4",
-        type === "ERROR" && "text-red-700 dark:text-red-500"
+        type === "ERROR" && "text-red-700 dark:text-rose-500"
       )}
     >
       <div className="flex items-center gap-2 pl-2 mb-2">

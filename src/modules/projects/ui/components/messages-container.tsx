@@ -2,31 +2,47 @@ import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import MessageCard from "./message-card";
 import MessageForm from "./message-form";
-import { useEffect, useRef } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef } from "react";
+import { Fragment } from "@/generated/prisma";
+import MessageLoading from "./message-loading";
 
 interface Props {
   projectId: string;
+  activeFragment: Fragment | null;
+  setActiveFragment: Dispatch<SetStateAction<Fragment | null>>;
 }
 
-export default function MessagesContainer({ projectId }: Props) {
+export default function MessagesContainer({
+  projectId,
+  activeFragment,
+  setActiveFragment,
+}: Props) {
   const trpc = useTRPC();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: messages } = useSuspenseQuery(
-    trpc.messages.getMany.queryOptions({ projectId })
+    trpc.messages.getMany.queryOptions(
+      { projectId },
+      {
+        // TODO: Temporary Live Fetch
+        refetchInterval: 5000,
+      }
+    )
   );
 
-  useEffect(
-    function () {
-      const lastAssistantMessage = messages.findLast(
-        (message) => message.role === "ASSISTANT"
-      );
-      if (lastAssistantMessage) {
-        // TODO: SET ACTIVE FRAGMENT
-      }
-    },
-    [messages]
-  );
+  // TOOD: Use later
+  // useEffect(
+  //   function () {
+  //     const lastAssistantMessage = messages.findLast(
+  //       (message) =>
+  //         message.role === "ASSISTANT" && !!message.fragment
+  //     );
+  //     if (lastAssistantMessage) {
+  //       setActiveFragment(activeFragment);
+  //     }
+  //   },
+  //   [messages]
+  // );
 
   useEffect(
     function () {
@@ -34,6 +50,9 @@ export default function MessagesContainer({ projectId }: Props) {
     },
     [messages.length]
   );
+
+  const lastMessageBelongsToUser =
+    messages[messages.length - 1]?.role === "USER";
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -45,12 +64,17 @@ export default function MessagesContainer({ projectId }: Props) {
               content={message.content}
               createdAt={message.createdAt}
               fragment={message.fragment}
-              isActiveFragment={false}
-              onFragmentClick={() => {}}
+              isActiveFragment={
+                activeFragment?.id === message.fragment?.id
+              }
+              onFragmentClick={(fragment) =>
+                setActiveFragment(fragment)
+              }
               role={message.role}
               type={message.type}
             />
           ))}
+          {lastMessageBelongsToUser && <MessageLoading />}
           <div ref={bottomRef} />
         </div>
       </div>
