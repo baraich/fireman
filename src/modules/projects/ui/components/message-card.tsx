@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Image from "next/image";
 import { ChevronRightIcon, Code2Icon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { JSX } from "react";
 
 interface UserMessageProps {
   content: string;
@@ -73,6 +75,56 @@ export const AssistantMessage = ({
   onFragmentClick,
   type,
 }: AssistantMessage) => {
+  const renderFileReference = (reference: string) => (
+    <Button
+      asChild
+      variant="outline"
+      size="sm"
+      className="font-bold mx-0 px-2 truncate"
+    >
+      <b>
+        {reference.substring(0, 4)}
+        ...
+        {reference.substring(reference.length - 6)}
+      </b>
+    </Button>
+  );
+
+  const renderContent = () => {
+    const filePathRegex =
+      /(?:\([\w-]+(?:\/[\w-]+)*\.[\w-]+\)|[\w-]+(?:\/[\w-]+)*\.[\w-]+\b)/g;
+    let lastIndex = 0;
+    const elements: JSX.Element[] = [];
+
+    let match;
+    while ((match = filePathRegex.exec(content)) !== null) {
+      const matchStart = match.index;
+      const matchEnd = matchStart + match[0].length;
+
+      if (matchStart > lastIndex) {
+        elements.push(
+          <span key={lastIndex}>
+            {content.slice(lastIndex, matchStart)}
+          </span>
+        );
+      }
+
+      elements.push(
+        <span key={matchStart}>{renderFileReference(match[0])}</span>
+      );
+
+      lastIndex = matchEnd;
+    }
+
+    if (lastIndex < content.length) {
+      elements.push(
+        <span key={lastIndex}>{content.slice(lastIndex)}</span>
+      );
+    }
+
+    return elements;
+  };
+
   return (
     <div
       className={cn(
@@ -94,7 +146,9 @@ export const AssistantMessage = ({
         </span>
       </div>
       <div className="pl-8.5 flex flex-col gap-y-4">
-        <span>{content}</span>
+        <span className="inline-block text-balance break-words">
+          {renderContent()}
+        </span>
         {fragment && type === "RESULT" && (
           <FragmentCard
             fragment={fragment}
