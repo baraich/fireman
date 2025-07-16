@@ -68,14 +68,16 @@ const FileBreadcrumb = ({ filePath }: FileBreadcrumbProps) => {
             <span className="text-muted-foreground">
               {firstSegment}
             </span>
-            <BreadcrumbSeparator />
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
             <BreadcrumbEllipsis />
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-medium">
-                {lastSegment}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-medium">
+              {lastSegment}
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </>
       );
@@ -137,7 +139,7 @@ export default function FileExplorer({ files }: FileExplorerProps) {
           onSelect={handleFileSelect}
         />
       </ResizablePanel>
-      <ResizableHandle />
+      <ResizableHandle className="hover:bg-primary transition-colors" />
       <ResizablePanel defaultSize={70} minSize={50}>
         {selectedFile && files[selectedFile] ? (
           <div className="h-full w-full flex flex-col">

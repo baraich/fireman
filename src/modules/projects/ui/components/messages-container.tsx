@@ -19,30 +19,33 @@ export default function MessagesContainer({
 }: Props) {
   const trpc = useTRPC();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastAssistantMessageIdRef = useRef<string | null>(null);
 
   const { data: messages } = useSuspenseQuery(
     trpc.messages.getMany.queryOptions(
       { projectId },
       {
-        // TODO: Temporary Live Fetch
         refetchInterval: 5000,
       }
     )
   );
 
-  // TOOD: Use later
-  // useEffect(
-  //   function () {
-  //     const lastAssistantMessage = messages.findLast(
-  //       (message) =>
-  //         message.role === "ASSISTANT" && !!message.fragment
-  //     );
-  //     if (lastAssistantMessage) {
-  //       setActiveFragment(activeFragment);
-  //     }
-  //   },
-  //   [messages]
-  // );
+  useEffect(
+    function () {
+      const lastAssistantMessage = messages.findLast(
+        (message) => message.role === "ASSISTANT"
+      );
+
+      if (
+        lastAssistantMessage?.fragment &&
+        lastAssistantMessage.id !== lastAssistantMessageIdRef.current
+      ) {
+        setActiveFragment(lastAssistantMessage.fragment);
+        lastAssistantMessageIdRef.current = lastAssistantMessage.id;
+      }
+    },
+    [messages]
+  );
 
   useEffect(
     function () {
