@@ -3,6 +3,7 @@ import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { prisma } from "@/lib/db";
 import { inngest } from "@/inngest/client";
 import { TRPCError } from "@trpc/server";
+import { consumeCredits } from "@/lib/usage";
 
 export const messagesRouter = createTRPCRouter({
   getMany: protectedProcedure
@@ -54,6 +55,22 @@ export const messagesRouter = createTRPCRouter({
         });
       }
 
+      try {
+        await consumeCredits();
+      } catch (error) {
+        if (error instanceof Error) {
+          console.log(error.message);
+          throw new TRPCError({
+            code: "BAD_GATEWAY",
+            message: process.env.NODE_ENV,
+          });
+        } else {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "You have run out of credits",
+          });
+        }
+      }
       const newMessage = await prisma.message.create({
         data: {
           role: "USER",
