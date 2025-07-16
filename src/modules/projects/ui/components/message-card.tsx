@@ -82,17 +82,27 @@ export const AssistantMessage = ({
       size="sm"
       className="font-bold mx-0 px-2 truncate"
     >
-      <b>
-        {reference.substring(0, 4)}
-        ...
-        {reference.substring(reference.length - 6)}
+      <b className="text-muted-foreground">
+        {reference.includes(".") ? (
+          <>
+            {reference.substring(0, 4)}
+            ...
+            {reference.substring(reference.length - 6)}
+          </>
+        ) : (
+          <>
+            {reference.substring(0, 4)}
+            ...
+            {reference.substring(reference.length - 1)}
+          </>
+        )}
       </b>
     </Button>
   );
 
   const renderContent = () => {
     const filePathRegex =
-      /(?:\([\w-]+(?:\/[\w-]+)*\.[\w-]+\)|[\w-]+(?:\/[\w-]+)*\.[\w-]+\b)/g;
+      /(?:\([\w-]+(?:\/[\w-]+)*\.[\w-]+\)|[\w-]+(?:\/[\w-]+)*(\.[\w-]+|\/)\b)/g;
     let lastIndex = 0;
     const elements: JSX.Element[] = [];
 
