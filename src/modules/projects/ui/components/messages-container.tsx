@@ -25,7 +25,7 @@ export default function MessagesContainer({
     trpc.messages.getMany.queryOptions(
       { projectId },
       {
-        refetchInterval: 5000,
+        refetchInterval: 2000,
       }
     )
   );
