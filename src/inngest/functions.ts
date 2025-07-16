@@ -11,15 +11,33 @@ import {
   createTool,
   createNetwork,
   createState,
+  Message,
 } from "@inngest/agent-kit";
 import { z } from "zod";
-import { PROMPT } from "@/prompt";
+import {
+  FRAGMENT_TITLE_PROMPT,
+  PROMPT,
+  RESPONSE_PROMPT,
+} from "@/prompt";
 import { prisma } from "@/lib/db";
 
 interface AgentState {
   vibed: string;
   files: { [path: string]: string };
 }
+
+const parseValue = (value: Message[], fallback: string) => {
+  const output = value[0];
+  if (output.type !== "text") {
+    return fallback;
+  }
+
+  return (
+    (Array.isArray(output.content)
+      ? output.content.join("")
+      : output.content) || fallback
+  );
+};
 
 export const codeAgentFunction = inngest.createFunction(
   { id: "code-agent" },
@@ -30,10 +48,40 @@ export const codeAgentFunction = inngest.createFunction(
       return sandbox.sandboxId;
     });
 
-    const networkState = createState<AgentState>({
-      vibed: "",
-      files: {},
-    });
+    const previousMessages = await step.run(
+      "get-previous-messages",
+      async () => {
+        const formattedMessages: Message[] = [];
+        const messages = await prisma.message.findMany({
+          where: {
+            projectId: event.data.projectId,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        });
+
+        for (const message of messages) {
+          formattedMessages.push({
+            type: "text",
+            role: message.role === "ASSISTANT" ? "assistant" : "user",
+            content: message.content,
+          });
+        }
+
+        return formattedMessages;
+      }
+    );
+
+    const networkState = createState<AgentState>(
+      {
+        vibed: "",
+        files: {},
+      },
+      {
+        messages: previousMessages,
+      }
+    );
 
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
@@ -205,7 +253,33 @@ export const codeAgentFunction = inngest.createFunction(
       },
     });
 
-    const result = await network.run(event.data.prompt);
+    const result = await network.run(event.data.prompt, {
+      state: networkState,
+    });
+
+    const fragmentTitleGenerator = createAgent({
+      name: "fragment-title-generator",
+      description: "Fragment Title Generator",
+      system: FRAGMENT_TITLE_PROMPT,
+      model: openai({
+        model: "gpt-4.1-nano",
+      }),
+    });
+
+    const responseGenerator = createAgent({
+      name: "response-generator",
+      description: "Fragment Title Generator",
+      system: RESPONSE_PROMPT,
+      model: openai({
+        model: "gpt-4.1-nano",
+      }),
+    });
+
+    const { output: fragmentTitle } =
+      await fragmentTitleGenerator.run(result.state.data.vibed);
+    const { output: response } = await responseGenerator.run(
+      result.state.data.vibed
+    );
 
     const isError =
       !result.state.data.vibed ||
@@ -233,13 +307,10 @@ export const codeAgentFunction = inngest.createFunction(
           type: "RESULT",
           role: "ASSISTANT",
           projectId: event.data.projectId,
-          content: result.state.data.vibed.replace(
-            /<(\/?)vibed>/g,
-            ""
-          ),
+          content: parseValue(response, "Here you go!"),
           fragment: {
             create: {
-              title: "Fragment",
+              title: parseValue(fragmentTitle, "Fragment"),
               files: result.state.data.files || {},
               sandboxUrl: sandboxUrl,
             },
