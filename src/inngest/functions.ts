@@ -20,6 +20,7 @@ import {
   RESPONSE_PROMPT,
 } from "@/prompt";
 import { prisma } from "@/lib/db";
+import { SANDBOX_DURATION } from "@/constants";
 
 interface AgentState {
   vibed: string;
@@ -43,10 +44,80 @@ export const codeAgentFunction = inngest.createFunction(
   { id: "code-agent" },
   { event: "code-agent/run" },
   async ({ step, event }) => {
-    const sandboxId = await step.run("get-sandbox-id", async () => {
-      const sandbox = await Sandbox.create("b-vibe-next");
-      sandbox.setTimeout(60_000 * 10 * 1); // 10 Minutes
-      return sandbox.sandboxId;
+    const oldSandboxId = await step.run(
+      "get-sandbox-id",
+      async () => {
+        const project = await prisma.project.findUnique({
+          where: {
+            id: event.data.projectId,
+          },
+        });
+        if (!project?.sandboxId) {
+          const sandbox = await Sandbox.create("b-vibe-next");
+          sandbox.setTimeout(SANDBOX_DURATION);
+          const updatedProject = await prisma.project.update({
+            data: {
+              sandboxId: sandbox.sandboxId,
+            },
+            where: {
+              id: event.data.projectId,
+            },
+          });
+          return updatedProject.sandboxId as string;
+        }
+
+        return project.sandboxId;
+      }
+    );
+
+    const sandboxId = await step.run("validate-sandbox", async () => {
+      try {
+        const sandbox = await getSandbox(oldSandboxId);
+        return sandbox.sandboxId;
+      } catch {
+        // Sandbox has expired.
+        const messages = await prisma.message.findMany({
+          where: {
+            project: {
+              id: event.data.projectId,
+            },
+          },
+          include: {
+            fragment: true,
+          },
+        });
+
+        const assistantMessagesWithValidFragments = messages.filter(
+          (message) =>
+            message.role === "ASSISTANT" && !!message.fragment
+        );
+
+        const newSandbox = await Sandbox.create("b-vibe-next");
+        newSandbox.setTimeout(SANDBOX_DURATION);
+
+        await prisma.project.update({
+          data: {
+            sandboxId: newSandbox.sandboxId,
+          },
+          where: {
+            id: event.data.projectId,
+            sandboxId: oldSandboxId,
+          },
+        });
+
+        assistantMessagesWithValidFragments.forEach((message) => {
+          const files = message.fragment?.files as
+            | { [path: string]: string }
+            | undefined;
+          if (!files) return;
+
+          Object.entries(files).forEach(([key, value]) => {
+            newSandbox.files.write(key, value);
+          });
+        });
+
+        return newSandbox.sandboxId;
+      }
     });
 
     const previousMessages = await step.run(

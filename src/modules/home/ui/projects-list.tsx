@@ -7,9 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
 
-interface Props {}
-
-export default function ProjectsList({}: Props) {
+export default function ProjectsList() {
   const trpc = useTRPC();
   const { user } = useUser();
   const { data: projects } = useQuery(

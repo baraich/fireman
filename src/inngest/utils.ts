@@ -1,9 +1,10 @@
+import { SANDBOX_DURATION } from "@/constants";
 import { Sandbox } from "@e2b/code-interpreter";
 import { AgentResult, TextMessage } from "@inngest/agent-kit";
 
 export async function getSandbox(sandboxId: string) {
   const sandbox = await Sandbox.connect(sandboxId);
-  sandbox.setTimeout(60_000 * 10 * 1); // 10 Minutes
+  sandbox.setTimeout(SANDBOX_DURATION);
   return sandbox;
 }
 

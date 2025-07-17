@@ -5,7 +5,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useTRPC } from "@/trpc/client";
 import MessagesContainer from "./components/messages-container";
 import { Suspense, useState } from "react";
 import { Fragment } from "@/generated/prisma";

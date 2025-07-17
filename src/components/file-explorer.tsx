@@ -157,7 +157,7 @@ export default function FileExplorer({ files }: FileExplorerProps) {
                 </Button>
               </Hint>
             </div>
-            <div>
+            <div className="overflow-auto h-full no-scrollbar">
               <CodeView
                 code={files[selectedFile]}
                 lang={getLanguageFromExtension(selectedFile)}

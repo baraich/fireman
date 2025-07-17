@@ -10,7 +10,6 @@ interface Props {
 
 export default function FragmentWeb({ data }: Props) {
   const [fragmentKey, setFragmentKey] = useState(0);
-  const [copied, setCopied] = useState(false);
 
   const onRefresh = () => {
     setFragmentKey((prev) => prev + 1);
@@ -18,8 +17,6 @@ export default function FragmentWeb({ data }: Props) {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(data.sandboxUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
