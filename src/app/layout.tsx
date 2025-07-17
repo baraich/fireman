@@ -11,7 +11,7 @@ const fontFamily = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Vibe",
+  title: "fireman",
 };
 
 export default function RootLayout({

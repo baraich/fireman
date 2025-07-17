@@ -16,7 +16,7 @@ export default function Pricing() {
             src={"/logo.svg"}
             width={50}
             height={50}
-            alt="Vibe"
+            alt="fireman"
             className="hidden md:block"
           />
         </div>

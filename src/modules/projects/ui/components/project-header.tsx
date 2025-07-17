@@ -48,7 +48,7 @@ export default function ProjectHeader({ projectId }: Props) {
           >
             <Image
               src={"/logo.svg"}
-              alt="Vibe"
+              alt="fireman"
               width={18}
               height={18}
               className="shrink-0"

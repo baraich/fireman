@@ -23,7 +23,7 @@ import { prisma } from "@/lib/db";
 import { SANDBOX_DURATION } from "@/constants";
 
 interface AgentState {
-  vibed: string;
+  firemaned: string;
   files: { [path: string]: string };
 }
 
@@ -53,7 +53,7 @@ export const codeAgentFunction = inngest.createFunction(
           },
         });
         if (!project?.sandboxId) {
-          const sandbox = await Sandbox.create("b-vibe-next");
+          const sandbox = await Sandbox.create("fireman-nextjs");
           sandbox.setTimeout(SANDBOX_DURATION);
           const updatedProject = await prisma.project.update({
             data: {
@@ -92,7 +92,7 @@ export const codeAgentFunction = inngest.createFunction(
             message.role === "ASSISTANT" && !!message.fragment
         );
 
-        const newSandbox = await Sandbox.create("b-vibe-next");
+        const newSandbox = await Sandbox.create("fireman-nextjs");
         newSandbox.setTimeout(SANDBOX_DURATION);
 
         await prisma.project.update({
@@ -148,7 +148,7 @@ export const codeAgentFunction = inngest.createFunction(
 
     const networkState = createState<AgentState>(
       {
-        vibed: "",
+        firemaned: "",
         files: {},
       },
       {
@@ -278,7 +278,7 @@ export const codeAgentFunction = inngest.createFunction(
             lastAssistantTextMessageContent(result);
 
           if (lastAssistantMessageText && network) {
-            if (lastAssistantMessageText.includes("<vibed>")) {
+            if (lastAssistantMessageText.includes("<firemaned>")) {
               const files = toolMessages(
                 network.state.results
               ).flatMap((call) =>
@@ -307,7 +307,7 @@ export const codeAgentFunction = inngest.createFunction(
                 }),
                 {}
               );
-              network.state.data.vibed = lastAssistantMessageText;
+              network.state.data.firemaned = lastAssistantMessageText;
             }
           }
 
@@ -322,7 +322,7 @@ export const codeAgentFunction = inngest.createFunction(
       maxIter: 15,
       defaultState: networkState,
       router: async ({ network }) => {
-        return network.state.data.vibed ? undefined : codeAgent;
+        return network.state.data.firemaned ? undefined : codeAgent;
       },
     });
 
@@ -349,13 +349,13 @@ export const codeAgentFunction = inngest.createFunction(
     });
 
     const { output: fragmentTitle } =
-      await fragmentTitleGenerator.run(result.state.data.vibed);
+      await fragmentTitleGenerator.run(result.state.data.firemaned);
     const { output: response } = await responseGenerator.run(
-      result.state.data.vibed
+      result.state.data.firemaned
     );
 
     const isError =
-      !result.state.data.vibed ||
+      !result.state.data.firemaned ||
       Object.keys(result.state.data.files || {}).length === 0;
 
     const sandboxUrl = await step.run("get-sandbox-url", async () => {

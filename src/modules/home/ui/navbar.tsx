@@ -27,11 +27,11 @@ export default function Navbar() {
         <Link className="flex items-center gap-2" href={"/"}>
           <Image
             src={"/logo.svg"}
-            alt="Vibe"
+            alt="fireman"
             width={24}
             height={24}
           />
-          <span className="text-lg font-semibold">Vibe</span>
+          <span className="text-lg font-semibold">fireman</span>
         </Link>
         <SignedOut>
           <div className="flex gap-2">
