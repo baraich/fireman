@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { SANDBOX_DURATION } from "@/constants";
+import { getSandboxRemainingTime } from "@/lib/sandbox";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useAuth } from "@clerk/nextjs";
@@ -28,18 +29,11 @@ export default function Usage({
   const { data: messages } = useSuspenseQuery(
     trpc.messages.getMany.queryOptions({ projectId })
   );
-  const targetDate = add(
-    messages.findLast((message) => message.role === "USER")!
-      .createdAt || new Date(),
-    { seconds: SANDBOX_DURATION / 1000 }
-  );
-  console.log(targetDate);
 
   useEffect(
     function () {
       const updateCountdown = () => {
-        const now = new Date();
-        const remainingTime = targetDate.getTime() - now.getTime();
+        const remainingTime = getSandboxRemainingTime(messages);
 
         if (remainingTime <= 0) {
           setSandboxValidTime("00:00");
@@ -62,7 +56,7 @@ export default function Usage({
 
       return () => clearInterval(interval);
     },
-    [messages, targetDate]
+    [messages]
   );
 
   return (
@@ -90,7 +84,8 @@ export default function Usage({
         <div
           className={cn(
             "flex flex-col items-end justify-center",
-            !hasProAccess && "group-hover:hidden"
+            !hasProAccess && "group-hover:hidden",
+            sandboxValidTime === "00:00" && "hidden"
           )}
         >
           <span className="text-sm">{sandboxValidTime}</span>
@@ -98,12 +93,17 @@ export default function Usage({
             minutes remaining
           </span>
         </div>
+
         {!hasProAccess && (
           <Button
             asChild
             size={"sm"}
             variant={"tertiary"}
-            className="ml-auto hidden group-hover:flex"
+            className={cn(
+              "ml-auto",
+              sandboxValidTime !== "00:00" &&
+                "hidden group-hover:flex"
+            )}
           >
             <Link href={"/pricing"} className="flex">
               <CrownIcon />

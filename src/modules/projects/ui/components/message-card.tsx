@@ -10,6 +10,7 @@ import Image from "next/image";
 import { ChevronRightIcon, Code2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JSX } from "react";
+import Hint from "@/components/hint";
 
 interface UserMessageProps {
   content: string;
@@ -75,30 +76,33 @@ export const AssistantMessage = ({
   onFragmentClick,
   type,
 }: AssistantMessage) => {
-  const renderFileReference = (reference: string) => (
-    <Button
-      asChild
-      variant="outline"
-      size="sm"
-      className="font-bold mx-0 px-2 truncate"
-    >
-      <b className="text-muted-foreground">
-        {reference.includes(".") ? (
-          <>
-            {reference.substring(0, 4)}
-            ...
-            {reference.substring(reference.length - 6)}
-          </>
-        ) : (
-          <>
-            {reference.substring(0, 4)}
-            ...
-            {reference.substring(reference.length - 1)}
-          </>
-        )}
-      </b>
-    </Button>
-  );
+  const renderFileReference = (reference: string) => {
+    const maxVisibleLength = 12;
+    const startLength = 4;
+    const endLength = 6;
+
+    const shouldTruncate = reference.length > maxVisibleLength;
+
+    const displayText = shouldTruncate
+      ? `${reference.substring(
+          0,
+          startLength
+        )}...${reference.substring(reference.length - endLength)}`
+      : reference;
+
+    return (
+      <Hint text={reference}>
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="font-bold mx-0 px-2 truncate"
+        >
+          <b className="text-muted-foreground">{displayText}</b>
+        </Button>
+      </Hint>
+    );
+  };
 
   const renderContent = () => {
     const filePathRegex =

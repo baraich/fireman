@@ -6,7 +6,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import MessagesContainer from "./components/messages-container";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { Fragment } from "@/generated/prisma";
 import ProjectHeader from "./components/project-header";
 import FragmentWeb from "./components/fragment-web";
@@ -22,18 +22,26 @@ import Link from "next/link";
 import FileExplorer from "@/components/file-explorer";
 import UserControl from "@/components/user-control";
 import { useAuth } from "@clerk/nextjs";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import { getSandboxRemainingTime } from "@/lib/sandbox";
 
 interface Props {
   projectId: string;
 }
 
 export const ProjectsView = ({ projectId }: Props) => {
+  const trpc = useTRPC();
   const { has } = useAuth();
   const hasProAccess = has?.({ plan: "pro" });
   const [activeFragment, setActiveFragment] =
     useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<"preview" | "code">(
     "preview"
+  );
+
+  const { data: messages } = useSuspenseQuery(
+    trpc.messages.getMany.queryOptions({ projectId })
   );
 
   return (
@@ -91,9 +99,29 @@ export const ProjectsView = ({ projectId }: Props) => {
             </div>
 
             <TabsContent value="preview">
-              {!!activeFragment && (
-                <FragmentWeb data={activeFragment} />
-              )}
+              {!!activeFragment &&
+                (getSandboxRemainingTime(messages) <= 0 ? (
+                  <div className="w-full h-full flex items-center justify-center bg-secondary">
+                    <div className="p-10 rounded-lg border bg-background text-center space-y-4 max-w-md mx-auto">
+                      <h3 className="text-2xl font-bold">
+                        Sandbox Expired
+                      </h3>
+                      <p className="text-muted-foreground">
+                        The demo for this fragment has expired. You
+                        can view the code in the code tab.
+                      </p>
+                      <Button
+                        variant={"default"}
+                        onClick={() => setTabState("code")}
+                      >
+                        <CodeIcon className="mr-2" />
+                        View Code
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <FragmentWeb data={activeFragment} />
+                ))}
             </TabsContent>
             <TabsContent value="code" className="min-h-0">
               {!!activeFragment?.files && (
