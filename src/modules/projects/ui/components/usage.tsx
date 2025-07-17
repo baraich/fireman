@@ -23,7 +23,7 @@ export default function Usage({
 }: Props) {
   const trpc = useTRPC();
   const { has } = useAuth();
-  const hasProAccess = has?.({ plan: "pro" });
+  const isFreeUser = has?.({ plan: "free_user" });
   const [sandboxValidTime, setSandboxValidTime] = useState("");
 
   const { data: messages } = useSuspenseQuery(
@@ -67,7 +67,7 @@ export default function Usage({
         <div>
           <p className="text-sm">
             {points}
-            {hasProAccess ? " " : " free "}credits remaining
+            {!isFreeUser ? " " : " free "}credits remaining
           </p>
           <p className="text-xs text-muted-foreground">
             Resets in&nbsp;
@@ -84,7 +84,7 @@ export default function Usage({
         <div
           className={cn(
             "flex flex-col items-end justify-center",
-            !hasProAccess && "group-hover:hidden",
+            isFreeUser && "group-hover:hidden",
             sandboxValidTime === "00:00" && "hidden"
           )}
         >
@@ -94,7 +94,7 @@ export default function Usage({
           </span>
         </div>
 
-        {!hasProAccess && (
+        {isFreeUser && (
           <Button
             asChild
             size={"sm"}

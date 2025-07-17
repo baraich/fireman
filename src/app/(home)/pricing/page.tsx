@@ -11,7 +11,7 @@ export default function Pricing() {
   return (
     <div className="flex flex-col max-w-3xl mx-auto w-full">
       <section className="space-y-6 pt-[16vh] 2xl:pt-48">
-        <div className="flex flex-col items-center">
+        {/* <div className="flex flex-col items-center">
           <Image
             src={"/logo.svg"}
             width={50}
@@ -19,7 +19,7 @@ export default function Pricing() {
             alt="fireman"
             className="hidden md:block"
           />
-        </div>
+        </div> */}
         <h1 className="text-xl md:text-3xl font-bold text-center">
           Pricing
         </h1>
@@ -31,6 +31,7 @@ export default function Pricing() {
           appearance={{
             baseTheme: currentTheme === "dark" ? dark : undefined,
             elements: {
+              pricingTable: "md:grid-cols-3!",
               pricingTableCard: "border! shadow-none! rounded-lg!",
             },
           }}

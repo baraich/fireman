@@ -33,7 +33,7 @@ interface Props {
 export const ProjectsView = ({ projectId }: Props) => {
   const trpc = useTRPC();
   const { has } = useAuth();
-  const hasProAccess = has?.({ plan: "pro" });
+  const isFreeUser = has?.({ plan: "free_user" });
   const [activeFragment, setActiveFragment] =
     useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<"preview" | "code">(
@@ -86,7 +86,7 @@ export const ProjectsView = ({ projectId }: Props) => {
               </TabsList>
 
               <div className="ml-auto flex items-center gap-x-2">
-                {!hasProAccess && (
+                {isFreeUser && (
                   <Button asChild size={"sm"} variant={"tertiary"}>
                     <Link href={"/pricing"}>
                       <CrownIcon />
