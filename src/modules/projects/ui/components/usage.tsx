@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { SANDBOX_DURATION } from "@/constants";
 import { getSandboxRemainingTime } from "@/lib/sandbox";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useAuth } from "@clerk/nextjs";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { add, formatDuration, intervalToDuration } from "date-fns";
+import { formatDuration, intervalToDuration } from "date-fns";
 import { CrownIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";

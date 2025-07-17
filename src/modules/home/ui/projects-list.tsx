@@ -19,7 +19,7 @@ export default function ProjectsList() {
   return (
     <div className="w-full bg-white dark:bg-sidebar rounded-xl p-8 border flex flex-col gap-y-6">
       <h2 className="text-2xl font-semibold">
-        {user?.firstName}'s Playground
+        {user?.firstName}&apos;s Playground
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {projects?.length === 0 && (

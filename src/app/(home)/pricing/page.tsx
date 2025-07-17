@@ -3,7 +3,6 @@
 import { useCurrentTheme } from "@/hooks/use-current-theme";
 import { PricingTable } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import Image from "next/image";
 
 export default function Pricing() {
   const currentTheme = useCurrentTheme();
